@@ -1,0 +1,80 @@
+// The Hono app: one instance shared by the machine entry (server.ts), the edge
+// entry (worker.ts), and the build's pre-render. Edge-safe by construction:
+// no filesystem, no Node built-ins, no per-request state.
+import { Hono } from "hono";
+import type { FC } from "hono/jsx";
+import { pages } from "./pages";
+import { NotFound } from "./pages/not-found";
+import { errorPage, ServerError } from "./pages/error";
+import { Blog, postPage } from "./pages/blog";
+import { legalPage } from "./pages/legal";
+import { content } from "./content";
+import { redirectFor } from "./redirects";
+import { render } from "./layout";
+import { site, type Page } from "./site";
+import business from "./business";
+
+type Bindings = { DATABASE_URL?: string };
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+// Every route the build pre-renders: the listed pages, the blog index when
+// there are posts, each post, each legal page.
+export const routes: (Page & { Body: FC })[] = [
+  ...pages,
+  ...(content.posts.length ? [{ ...Blog.page, Body: Blog.Body }] : []),
+  ...content.posts.map((p) => {
+    const { page, Body } = postPage(p);
+    return { ...page, Body };
+  }),
+  ...content.legal.map((d) => {
+    const { page, Body } = legalPage(d);
+    return { ...page, Body };
+  }),
+];
+
+// Old paths → new paths (src/redirects.ts). Pre-rendered pages are static
+// files and win first at the edge; here the table runs ahead of every route.
+app.use("*", async (c, next) => {
+  const to = redirectFor(new URL(c.req.url).pathname);
+  if (to) return c.redirect(to, 301);
+  await next();
+});
+
+for (const route of routes) {
+  app.get(route.path, (c) => c.html(render(route, <route.Body />)));
+}
+
+// sitemap.xml and robots.txt from the route list, on the machine and, after
+// the build pre-renders them, as static files at the edge. site.url is the
+// origin; until it is set the locations are relative.
+const origin = () => (site.url ? site.url.replace(/\/$/, "") : "");
+app.get("/sitemap.xml", (c) => {
+  const urls = routes
+    .map((r) => r.path)
+    .sort()
+    .map((p) => `  <url><loc>${origin()}${p === "/" ? "/" : p}</loc></url>`)
+    .join("\n");
+  return c.body(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`, 200, {
+    "Content-Type": "application/xml; charset=utf-8",
+  });
+});
+app.get("/robots.txt", (c) =>
+  c.text(`User-agent: *\nAllow: /\n${origin() ? `Sitemap: ${origin()}/sitemap.xml\n` : ""}`),
+);
+
+// Dynamic routes (form posts, anything computed per request) go below. They
+// run on the machine and, after deploying, in the production Worker.
+
+// Forms, booking, payments and the private /admin (src/business.tsx): live
+// once the project has a database; until then the forms and /book are 404
+// and /admin says so.
+app.route("/", business);
+
+app.notFound((c) => c.html(render(NotFound.page, <NotFound.Body />), 404));
+app.onError((e, c) => {
+  console.error(`${c.req.method} ${c.req.path}:`, e);
+  return c.html(render(errorPage(c.req.path), <ServerError retry={c.req.method === "GET" ? c.req.url : null} />), 500);
+});
+
+export default app;

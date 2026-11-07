@@ -1,0 +1,45 @@
+{
+  "name": "lander",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A landing page for paid ads: a stepped or one-page form, every lead saved, sent on and reported on.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "content": "node scripts/content.mjs --verbose",
+    "css": "tailwindcss -i styles/input.css -o static/site.css --minify",
+    "css:watch": "tailwindcss -i styles/input.css -o static/site.css --watch=always",
+    "build": "tsx scripts/build.ts",
+    "check": "node scripts/check.mjs",
+    "check:code": "node scripts/check.mjs code",
+    "check:facts": "node scripts/check.mjs facts",
+    "check:copy": "node scripts/check.mjs copy",
+    "check:design": "node scripts/check.mjs design",
+    "check:seo": "node scripts/check.mjs seo",
+    "apply-design": "node scripts/apply-design.mjs",
+    "migrate": "tsx scripts/migrate.ts",
+    "test": "node scripts/test.mjs",
+    "deploy": "npm run migrate && npm run build && python3 ~/tools/taskandtool.py deploy dist --worker build/worker.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "hono": "^4.13.7",
+    "marked": "^18.0.11",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
+    "esbuild": "^0.28.2",
+    "node-html-parser": "^6.1.13",
+    "pg": "^8.23.1",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.0"
+  }
+}

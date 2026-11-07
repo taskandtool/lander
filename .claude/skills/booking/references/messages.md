@@ -1,0 +1,44 @@
+# Messages and reminders
+
+Read when setting up booking confirmations, reminders, or a text instead of an email.
+
+Wire the confirmation once, where bookings are taken:
+
+```ts
+onBooked: (c, e) => afterResponse(c, notifyBooking(emailSend(envOf(c)), e, { domain })),
+```
+
+It sends the booked, moved or cancelled message with the calendar invite
+(REQUEST, or CANCEL with a higher SEQUENCE) when the host has an email.
+`bookingAdmin`'s `onBooked` does the same for a booking the team makes.
+
+A booking made inside a form is confirmed when the form is complete
+(`confirm.ts`): wire `confirmFormBooking` into the forms routes'
+`onComplete` and the payments webhook's `afterPaid` (that file's header
+shows both). It claims the booking first, so the message goes once,
+whichever app, and whichever of the two hooks, gets there first; an app with
+no sender leaves it for one that has a sender.
+
+**Reminders** are the CRM's job route `/jobs/booking-reminders`
+(`bookingJobs` in `jobs.ts`; `reminders.ts`, the sending), a day and an
+hour before by default. Schedule it once (the `schedule-job` skill; check
+`python3 ~/tools/taskandtool.py list-jobs` first), every 15 minutes, not
+visible to clients:
+
+```bash
+python3 ~/tools/taskandtool.py schedule-job "Booking reminders" --when "*/15 * * * *" --route /jobs/booking-reminders
+```
+
+`bookingJobs(getDb, { before: [1440, 120] })` changes the times. The job
+answers what was sent and what was left alone, and a 500 when a send
+failed. Each reminder is
+claimed in `booking_reminders` before it is sent, so it goes once
+(`reminders.ts` lists which go); with no sender each is recorded as `none`.
+
+**Sending to a booker uses the owner's connection** (Task & Tool email
+reaches only the team). Email is Resend or Postmark
+(`python3 ~/tools/taskandtool.py list-connections`; ask with `python3 ~/tools/taskandtool.py request-connection resend --why "…"` if
+neither is granted), then `NOTIFY_FROM` on a domain verified there. Texts
+are the `phone` skill's: its Booked and Looking forward texts go from the
+business number beside these emails (call its `onBooked` from the same
+`onBooked`), with its own once-only claims.

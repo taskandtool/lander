@@ -1,0 +1,337 @@
+// A private list: the search and filter form, the table, the rows, and the
+// "Load more" row that keyset paging drives. One TableSpec describes the
+// columns once; the full page, the htmx partials (more rows, one updated
+// row) and the plain-link fallbacks all render from it.
+//
+//   const spec: TableSpec<Row> = { id: "subs", columns, href: (r) => `/admin/submissions/${r.id}` };
+//   <SearchBar action="/admin/submissions" target="#results" q={f.q} filters={[...]} />
+//   <div id="results"><DataTable spec={spec} caption="Submissions" rows={page} next={next} more={(cur) => listUrl(base, { ...f, after: cur })} empty="Nothing yet." /></div>
+//
+// The route answers the same URL three ways: `after` with an htmx request is
+// <TableRows> alone (it replaces the Load more row), any other htmx request
+// is the #results block, and a plain request is the whole page.
+import type { Child } from "hono/jsx";
+import { listUrl } from "./query";
+import { buttonClass, inputClass, Select } from "./status";
+import { shownZone } from "./viewer";
+
+export type Column<T> = { label: string; cell: (row: T) => Child; class?: string };
+
+export type TableSpec<T extends { id: string | number | bigint }> = {
+  /** Unique on the page; rows get `${id}-row-${row.id}`. Letters, digits, - and _ only. */
+  id: string;
+  columns: Column<T>[];
+  /** Detail URL; the first column links to it. */
+  href?: (row: T) => string;
+  /** A checkbox per row belonging to the bulk form with this id (`form=`), so rows added by Load more join it. */
+  /** A checkbox per row for a bulk form; `can` leaves it off a row that cannot be moved with the rest. */
+  select?: { form: string; label: (row: T) => string; can?: (row: T) => boolean };
+};
+
+export type Option = { value: string; label: string };
+export type Filter = { name: string; label: string; options: Option[]; value?: string | null; any?: string };
+
+// Borders sit on the cells, not the rows: with collapsed borders a hovered
+// row's background paints over part of the header's line in Safari.
+const cell = "px-4 py-3 align-top";
+
+export function DataTable<T extends { id: string | number | bigint }>(props: {
+  spec: TableSpec<T>;
+  caption: string;
+  rows: T[];
+  next: string | null;
+  more: (cursor: string) => string;
+  empty: Child;
+}) {
+  const { spec, caption, rows, next, more, empty } = props;
+  // Nothing listed, nothing to select all of.
+  const form = rows.length ? spec.select?.form.replace(/[^\w-]/g, "") : undefined;
+  const width = spec.columns.length + (form ? 1 : 0);
+  return (
+    <div class="overflow-x-auto rounded-card border border-line bg-surface shadow-card">
+      <table id={spec.id} class="w-full border-separate border-spacing-0 text-copy">
+        <caption class="sr-only">{caption}</caption>
+        <thead>
+          <tr class="text-left text-label text-ink-2">
+            {form ? (
+              <th scope="col" class={cell + " w-10 border-b border-line"}>
+                <input
+                  type="checkbox"
+                  class="size-5 sm:size-4"
+                  aria-label="Select all shown"
+                  onclick={`for (const b of document.querySelectorAll('input[form=${form}][name=id]')) b.checked = this.checked`}
+                />
+              </th>
+            ) : null}
+            {spec.columns.map((c) => (
+              <th scope="col" class={cell + " border-b border-line font-semibold " + (c.class ?? "")}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody id={`${spec.id}-rows`}>
+          {rows.length ? (
+            <TableRows spec={spec} rows={rows} next={next} more={more} />
+          ) : (
+            <tr>
+              <td colspan={width} class="px-4 py-10">
+                {typeof empty === "string" ? <EmptyState title={empty} /> : empty}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * An empty list, as Tailwind's empty states and HubSpot's say it: what goes
+ * here (the title), how it fills (a line), and the button that makes the
+ * first one. Inside a DataTable's `empty`, or in EmptyCard on its own.
+ */
+export function EmptyState({ title, children, action }: { title: string; children?: Child; action?: Child }) {
+  return (
+    <div class="text-center">
+      <p class="font-semibold text-ink">{title}</p>
+      {children ? <p class="mx-auto mt-1 max-w-md text-ink-2">{children}</p> : null}
+      {action ? <div class="mt-4 flex flex-wrap justify-center gap-2">{action}</div> : null}
+    </div>
+  );
+}
+
+/** EmptyState on a card of its own, where there is no table around it. */
+export function EmptyCard(props: { title: string; children?: Child; action?: Child }) {
+  return (
+    <div class="rounded-card border border-line bg-surface px-4 py-10 shadow-card">
+      <EmptyState {...props} />
+    </div>
+  );
+}
+
+/**
+ * What a section needs before it can do its job (Stripe for invoices, email
+ * for quotes), and the words to ask the AI for it, with a button that copies
+ * them. Sits above the section's own content, which still works for drafts.
+ */
+export function SetupNeeded({ title, children, ask }: { title: string; children: Child; ask: string }) {
+  return (
+    <div role="status" class="mb-4 rounded-card bg-surface p-4 shadow-card ring-1 ring-line">
+      <p class="font-semibold text-ink">{title}</p>
+      <p class="mt-1 max-w-prose text-ink-2">{children}</p>
+      <AskAi class="mt-3" ask={ask} />
+    </div>
+  );
+}
+
+/** Words to say to the AI in this app's chat, with a button that copies them; `label` false under a heading that says so once. */
+export function AskAi({ ask, label = true, class: cls = "" }: { ask: string; label?: boolean; class?: string }) {
+  return (
+    <div class={`flex flex-wrap items-center gap-2 ${cls}`}>
+      {label ? <span class="text-label text-ink-2">Ask the AI in this app's chat:</span> : null}
+      <q class="rounded-control bg-panel px-2 py-1 text-label text-ink">{ask}</q>
+      <button type="button" class={buttonClass} onclick={`navigator.clipboard.writeText(${JSON.stringify(ask)}).then(() => { this.textContent = "Copied" })`}>
+        Copy
+      </button>
+    </div>
+  );
+}
+
+/** A search or filter that found nothing: say so, and offer the way back. */
+export function NoMatches({ clear }: { clear: string }) {
+  return <EmptyState title="Nothing matches these filters." action={<a href={clear} class={buttonClass}>Clear filters</a>} />;
+}
+
+/** The rows, then a Load more row when there is a next page. Also the htmx answer to "Load more". */
+export function TableRows<T extends { id: string | number | bigint }>(props: {
+  spec: TableSpec<T>;
+  rows: T[];
+  next: string | null;
+  more: (cursor: string) => string;
+}) {
+  const { spec, rows, next, more } = props;
+  return (
+    <>
+      {rows.map((r) => (
+        <TableRow spec={spec} row={r} />
+      ))}
+      {next ? <LoadMoreRow id={`${spec.id}-more`} href={more(next)} width={spec.columns.length + (spec.select ? 1 : 0)} /> : null}
+    </>
+  );
+}
+
+/**
+ * As Stripe's and Linear's lists: a click anywhere on a row opens it, and
+ * Cmd, Ctrl or the middle button opens it in a new tab. A click on something
+ * of its own (a link, a checkbox, a button, a menu) or one that selects text
+ * is left alone. The first cell's link stays the way there for the keyboard
+ * and screen readers. A handler, not a link stretched over the row: Safari
+ * measures that against the whole table, so every row opened the last one.
+ */
+export function rowClick(href: string) {
+  const go =
+    "if(event.target.closest('a,button,input,select,textarea,label,summary,details')||getSelection().toString())return;" +
+    "if(event.metaKey||event.ctrlKey||event.button===1)window.open(this.dataset.href);else location.assign(this.dataset.href)";
+  return { "data-href": href, onclick: go, onauxclick: `if(event.button===1){${go}}` };
+}
+
+/** The first cell's link: the row's name, no underline (the row shows it can be clicked). */
+export const rowLink = "font-semibold text-ink no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent";
+
+/** One row. Also the htmx answer to a change made in it (target "closest tr"). */
+export function TableRow<T extends { id: string | number | bigint }>({ spec, row }: { spec: TableSpec<T>; row: T }) {
+  const href = spec.href?.(row);
+  return (
+    <tr id={`${spec.id}-row-${row.id}`} class={"group hover:bg-panel/60" + (href ? " cursor-pointer" : "")} {...(href ? rowClick(href) : {})}>
+      {spec.select ? (
+        <td class={cell + " border-b border-line group-last:border-b-0"}>
+          {spec.select.can && !spec.select.can(row) ? null : (
+            <input type="checkbox" name="id" value={String(row.id)} form={spec.select.form} aria-label={`Select ${spec.select.label(row)}`} class="size-5 sm:size-4" />
+          )}
+        </td>
+      ) : null}
+      {spec.columns.map((c, i) => (
+        <td class={cell + " border-b border-line group-last:border-b-0 " + (c.class ?? "")}>
+          {i === 0 && href ? (
+            <a href={href} class={rowLink}>
+              {c.cell(row)}
+            </a>
+          ) : (
+            c.cell(row)
+          )}
+        </td>
+      ))}
+    </tr>
+  );
+}
+
+/**
+ * Swaps itself for the next rows under htmx. Without JavaScript the same
+ * href is a full page of the next rows; the route offers a way back to the
+ * newest there.
+ */
+export function LoadMoreRow({ id, href, width }: { id: string; href: string; width: number }) {
+  return (
+    <tr id={id}>
+      <td colspan={width} class="px-3 py-3 text-center">
+        <a href={href} hx-get={href} hx-target="closest tr" hx-swap="outerHTML" hx-push-url="false" class={buttonClass}>
+          Load more
+        </a>
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * The search and filter form. A plain GET form; with htmx it searches as
+ * you type (300 ms after the last key), refilters on a select change, swaps
+ * `target`, and pushes the URL so back and refresh keep the filter.
+ */
+export function SearchBar(props: {
+  action: string;
+  target: string;
+  q?: string | null;
+  label?: string;
+  placeholder?: string;
+  filters?: Filter[];
+  /** Values the search carries unchanged, as a view chosen with tabs above it: { view: "done" }. */
+  keep?: Record<string, string | null | undefined>;
+  /** The list below already offers Clear filters (NoMatches). */
+  hideClear?: boolean;
+}) {
+  const { action, target, q, label = "Search", placeholder, filters = [], keep = {}, hideClear = false } = props;
+  const active = !hideClear && (!!q || filters.some((f) => f.value));
+  // Each select's first option ("Any status") says what it filters, so its label is for screen readers.
+  return (
+    <form
+      method="get"
+      action={action}
+      role="search"
+      hx-get={action}
+      hx-target={target}
+      hx-swap="outerHTML"
+      hx-push-url="true"
+      class="mb-4 flex flex-wrap items-center gap-2"
+    >
+      {Object.entries(keep).map(([name, value]) => (value ? <input type="hidden" name={name} value={value} /> : null))}
+      <label class="relative min-w-48 flex-1">
+        <span class="sr-only">{label}</span>
+        <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3">
+          <circle cx="7" cy="7" r="4.5" />
+          <path d="m10.5 10.5 3 3" />
+        </svg>
+        <input
+          type="search"
+          name="q"
+          value={q ?? ""}
+          placeholder={placeholder}
+          autocomplete="off"
+          hx-get={action}
+          hx-trigger="input changed delay:300ms, search"
+          hx-include="closest form"
+          class={inputClass + " pl-9"}
+        />
+      </label>
+      {/* On a phone the filters fold behind one Filters button, as Pipedrive's and HubSpot's
+          lists do; from sm up they sit inline (the disclosure's content always shows, where the
+          browser can style ::details-content; where it cannot, the Filters button stays). */}
+      {filters.length ? (
+        <details class="w-full sm:contents sm:[&::details-content]:contents sm:[&::details-content]:[content-visibility:visible]">
+          <summary class={buttonClass + " w-full cursor-pointer list-none sm:w-auto supports-[selector(::details-content)]:sm:hidden"}>
+            Filters{filters.some((f) => f.value) ? ` (${filters.filter((f) => f.value).length})` : ""}
+          </summary>
+          <div class="mt-2 grid grid-cols-2 gap-2 sm:contents">
+            {filters.map((f) => (
+              <label class="min-w-32 flex-1 sm:w-40 sm:flex-none">
+                <span class="sr-only">{f.label}</span>
+                <Select name={f.name} hx-get={action} hx-trigger="change" hx-include="closest form" class="w-full">
+                  <option value="">{f.any ?? "All"}</option>
+                  {f.options.map((o) => (
+                    <option value={o.value} selected={o.value === f.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            ))}
+          </div>
+        </details>
+      ) : null}
+      {/* htmx applies every change; the button is for a browser without it. */}
+      <noscript>
+        <button class={buttonClass}>Apply</button>
+      </noscript>
+      {/* Always there, hidden while nothing is filtered, so an app's script can show it as filters change. */}
+      <a href={listUrl(action, keep)} data-clear hidden={!active} class="px-1 text-sm/6 font-semibold text-ink-2 no-underline hover:text-ink">
+        Clear
+      </a>
+    </form>
+  );
+}
+
+/**
+ * A time in the zone of the person reading it (admin/viewer.tsx), "Oct 9, 2:30
+ * PM", with the year only when it is not this one; `day` leaves the time out.
+ * `timeZone` stands when no reader is known; `pin` always uses it, for a date
+ * with no time or a time that belongs to someone else's clock.
+ */
+export function When({ at, timeZone: given, pin = false, locale = "en-US", day = false, now = new Date() }: { at: Date | string | null | undefined; timeZone: string; pin?: boolean; locale?: string; day?: boolean; now?: Date }) {
+  if (!at) return null;
+  const timeZone = pin ? given : shownZone(given);
+  const d = at instanceof Date ? at : new Date(at);
+  if (Number.isNaN(d.getTime())) return null;
+  const year = (x: Date) => new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric" }).format(x);
+  const text = new Intl.DateTimeFormat(locale, {
+    timeZone,
+    month: "short",
+    day: "numeric",
+    year: year(d) === year(now) ? undefined : "numeric",
+    ...(day ? {} : { hour: "numeric", minute: "2-digit" }),
+  }).format(d);
+  return (
+    <time datetime={d.toISOString()} class="whitespace-nowrap">
+      {text}
+    </time>
+  );
+}

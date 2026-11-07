@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "slug": "lander",
+  "version": "0.1.0",
+  "needs": {
+    "connections": [
+      {
+        "provider": "taskandtool",
+        "strength": "suggested",
+        "why": "Email you and your team about new form submissions and bookings"
+      }
+    ]
+  },
+  "ready": {
+    "service": "web"
+  },
+  "suggestions": [
+    {
+      "id": "make-my-lander",
+      "label": "Make this my lander",
+      "prompt": "Make this lander mine. My business and offer: "
+    },
+    {
+      "id": "send-leads-on",
+      "label": "Send leads to my CRM",
+      "prompt": "Send each lead to my CRM. It's "
+    },
+    {
+      "id": "daily-numbers",
+      "label": "Bring in ad costs each morning",
+      "prompt": "Each morning, read yesterday's ad costs from my ad account and save them for the lead report."
+    }
+  ]
+}

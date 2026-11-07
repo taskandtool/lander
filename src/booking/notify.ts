@@ -1,0 +1,174 @@
+// What a booker is told, and how it reaches them. The words live here once
+// (bookingMessage); the delivery is a `Send`, a function that takes a
+// message and says what happened. The default is email through the sender
+// the owner connected (data/send.ts: NOTIFY_FROM, NOTIFY_VIA, through the
+// app's connections). No sender: nothing is sent, the
+// booking stands, and the manage page's .ics download is the invite. Task &
+// Tool never sends for an app.
+//
+//   onBooked: (c, e) => afterResponse(c, notifyBooking(emailSend(envOf(c)), e, { domain })),
+//
+// Another connector is another Send: a text through the owner's Twilio,
+// written by the app's AI against the gateway, takes the same message and
+// returns the same `Sent`. The reminder job (jobs.ts) takes one too.
+import type { Env } from "../data/env";
+import { emailsCustomers, sendEmail, type Sent } from "../data/send";
+import type { Db } from "../data/db";
+import { resourceById, toBooking, typeById, whereText, type Booking, type BookingType, type Resource } from "./book";
+import { icsContentType, invite, type IcsMethod } from "./ics";
+import { formatSlot, isValidZone } from "./slots";
+
+export type Message = {
+  to: string;
+  subject: string;
+  text: string;
+  /** Replies go to the person taking it, so a booker can answer a reminder. */
+  replyTo?: string | null;
+  /** The calendar invite, for a sender that can attach one. */
+  ics?: { text: string; method: IcsMethod } | null;
+  /** For the people who can open this app (the morning email), not a booker (data/send.ts). */
+  team?: boolean;
+};
+
+/** Delivers one message; never throws (a failure is a `failed` Sent). */
+export type Send = (m: Message) => Promise<Sent>;
+
+/**
+ * emailSend, or null when this app cannot email a customer (no sender, no
+ * NOTIFY_FROM, or only Task & Tool email, which reaches the team alone): say
+ * so before claiming work only a sender can do.
+ */
+export function emailSender(env: Env, doFetch: typeof fetch = fetch): Send | null {
+  return emailsCustomers(env) ? emailSend(env, doFetch) : null;
+}
+
+/** Email through the connected sender, the invite attached. */
+export function emailSend(env: Env, doFetch: typeof fetch = fetch): Send {
+  return (m) =>
+    sendEmail(
+      env,
+      {
+        to: [m.to],
+        subject: m.subject,
+        text: m.text,
+        replyTo: m.replyTo,
+        team: m.team,
+        attachments: m.ics
+          ? [{ filename: m.ics.method === "CANCEL" ? "cancel.ics" : "invite.ics", content: m.ics.text, contentType: icsContentType(m.ics.method) }]
+          : undefined,
+      },
+      doFetch,
+    );
+}
+
+export type MessageKind = "booked" | "rescheduled" | "cancelled" | "reminder";
+
+export type About = {
+  booking: Pick<Booking, "name" | "email" | "starts_at" | "ends_at" | "location_kind" | "location" | "booker_time_zone">;
+  type: Pick<BookingType, "name">;
+  host: Pick<Resource, "name" | "time_zone">;
+  /** The manage link: only where the booker was just given it (it is never stored). */
+  manageUrl?: string | null;
+};
+
+/** The words for a booker: what, with whom, when in their own zone, where, and how to change it. */
+export function bookingMessage(kind: MessageKind, a: About): { subject: string; text: string } {
+  const b = a.booking;
+  const zone = b.booker_time_zone && isValidZone(b.booker_time_zone) ? b.booker_time_zone : a.host.time_zone;
+  const when = formatSlot({ start: b.starts_at, end: b.ends_at }, zone);
+  const what = `${a.type.name} with ${a.host.name}`;
+  const where = kind === "cancelled" ? null : whereText(b, { link: true });
+  // A reminder never has the link (only its hash is stored); a booking the
+  // team made for someone may have none (no public booking page here).
+  const change = a.manageUrl
+    ? `To change or cancel: ${a.manageUrl}`
+    : kind === "reminder"
+      ? "To change or cancel, use the link in your booking confirmation, or reply to this email."
+      : "To change or cancel, reply to this email.";
+  const lines = (first: string, last: string | null) => [`Hi ${b.name},`, "", first, "", when, ...(where ? [where] : []), ...(last ? ["", last] : [])].join("\n");
+  switch (kind) {
+    case "booked":
+      return { subject: `Booked: ${a.type.name}`, text: lines(`You are booked: ${what}.`, change) };
+    case "rescheduled":
+      return { subject: `Moved: ${a.type.name}`, text: lines(`Your ${what} has moved to a new time.`, change) };
+    case "cancelled":
+      return { subject: `Cancelled: ${a.type.name}`, text: lines(`Your ${what} is cancelled.`, null) };
+    case "reminder":
+      return { subject: `Reminder: ${a.type.name}`, text: lines(`A reminder of your ${what}.`, change) };
+  }
+}
+
+/**
+ * A booking made, moved or cancelled, as every booking page reports it to its
+ * onBooked: the public pages, the team's, and a form's booking step.
+ * manageUrl is the booker's own link to change or cancel, when there is one.
+ */
+export type BookingNotice = {
+  event: "booked" | "rescheduled" | "cancelled";
+  booking: Booking;
+  type: BookingType;
+  host: Resource;
+  manageUrl: string | null;
+};
+
+/**
+ * Run an app's onBooked with what happened (or its lookup). A confirmation
+ * that fails to send never undoes the booking: it stands, and the booker's
+ * page has the invite.
+ */
+export async function runOnBooked<C, E>(onBooked: ((c: C, e: E) => unknown) | undefined, c: C, e: E | null | Promise<E | null>): Promise<void> {
+  if (!onBooked) return;
+  try {
+    const notice = await e;
+    if (notice) await onBooked(c, notice);
+  } catch (err) {
+    console.error("booking: onBooked failed:", err);
+  }
+}
+
+/**
+ * A move or a cancel made away from the booking pages (an app's own form, a
+ * script), as their onBooked is told of it. Null without a service and a
+ * person: there is nothing to tell a booker about.
+ */
+export async function noticeFor(db: Db, bookingId: string, event: "rescheduled" | "cancelled"): Promise<BookingNotice | null> {
+  const [raw] = await db.sql`select * from bookings where id = ${bookingId}::bigint`;
+  if (!raw) return null;
+  const booking = toBooking(raw);
+  const [type, host] = await Promise.all([typeById(db, booking.type_id), resourceById(db, booking.resource_id)]);
+  return type && host ? { event, booking, type, host, manageUrl: null } : null;
+}
+
+/**
+ * Tell the booker about a booking, a move or a cancel, with the calendar
+ * invite (REQUEST, or CANCEL with a higher SEQUENCE) when the host has an
+ * email to organize it from.
+ */
+export function notifyBooking(
+  send: Send,
+  e: BookingNotice,
+  opts: { domain: string },
+): Promise<Sent> {
+  if (!e.booking.email) return Promise.resolve({ status: "none", why: "the booker has no email" });
+  const { subject, text } = bookingMessage(e.event, e);
+  const method: IcsMethod = e.event === "cancelled" ? "CANCEL" : "REQUEST";
+  const ics = e.host.email
+    ? {
+        method,
+        text: invite({
+          method, booking: e.booking, domain: opts.domain, organizer: { email: e.host.email, name: e.host.name },
+          summary: `${e.type.name} with ${e.host.name}`, location: e.booking.location, url: e.manageUrl,
+        }),
+      }
+    : null;
+  return send({ to: e.booking.email, subject, text, replyTo: e.host.email, ics });
+}
+
+/** Your own words with the invite attached, for a message bookingMessage does not cover. */
+export function sendInvite(
+  env: Env,
+  mail: { to: string; subject: string; text: string; ics: string; method: IcsMethod },
+  doFetch: typeof fetch = fetch,
+): Promise<Sent> {
+  return emailSend(env, doFetch)({ to: mail.to, subject: mail.subject, text: mail.text, ics: { text: mail.ics, method: mail.method } });
+}

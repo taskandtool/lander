@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+// The development loop in one process: the content regenerated when a note,
+// post, or legal page changes, Tailwind rebuilding static/site.css on every
+// change, and the server restarting when src/ changes (the generated content
+// is imported, so a regenerated file restarts it too). This is what the
+// `web` service runs on a Task & Tool machine, so an edit is live on refresh.
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fail } from "../src/data/cli.mjs";
+import { start } from "./lib.mjs";
+
+start("dev", `usage: npm run dev
+
+The web service's command, running until stopped: the notes compiled, the
+database's tables set up, Tailwind rebuilding the CSS and the server on
+localhost:3000 restarting on every change. Its output is the service log.`);
+
+for (const b of ["node_modules/.bin/tailwindcss", "node_modules/.bin/tsx"]) {
+  if (!existsSync(b)) fail(`dev: ${b} is missing`, "npm install, then npm run dev");
+}
+
+const content = () => spawnSync("node", ["scripts/content.mjs"], { stdio: "inherit" });
+content();
+// The database's tables for forms, bookings and payments, once, before the
+// server starts; a failure is printed and the pages still serve.
+spawnSync("node_modules/.bin/tsx", ["scripts/migrate.ts"], { stdio: "inherit" });
+// A cheap poll over the note folders (a folder replaced whole, as a copy
+// from elsewhere does, kills directory watchers).
+const stamp = () => {
+  let latest = 0;
+  for (const dir of ["public", "posts", "legal"]) {
+    if (!existsSync(dir)) continue;
+    for (const f of readdirSync(dir)) {
+      try {
+        latest = Math.max(latest, statSync(join(dir, f)).mtimeMs);
+      } catch {}
+    }
+  }
+  return latest;
+};
+let last = stamp();
+setInterval(() => {
+  const now = stamp();
+  if (now !== last) {
+    last = now;
+    content();
+  }
+}, 2000).unref();
+
+const children = [
+  // `--watch=always` (through the css:watch script): keep watching when stdin
+  // is closed, which it is under a service; plain --watch exits then and
+  // would take the server down with it.
+  spawn("npm", ["run", "--silent", "css:watch"], { stdio: "inherit" }),
+  spawn("node_modules/.bin/tsx", ["watch", "--clear-screen=false", "src/server.ts"], { stdio: "inherit" }),
+];
+
+let stopping = false;
+const stop = (signal, code) => {
+  if (stopping) return;
+  stopping = true;
+  for (const c of children) c.kill(signal);
+  process.exit(code ?? 0);
+};
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => stop(s, 0));
+for (const c of children) {
+  // If either half dies, take the other down so the service restarts cleanly.
+  c.on("exit", (code) => stop("SIGTERM", code ?? 1));
+}

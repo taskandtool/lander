@@ -1,0 +1,189 @@
+# The website's design system, as one record. `npm run apply-design` compiles it
+# into styles/theme.css (the tokens Tailwind turns into classes), DESIGN.md
+# (the readable contract) and src/fonts.ts; never edit those two by hand, `npm run check` says
+# when they no longer match this file. The shape is the design library's
+# (.claude/skills/design/references/authoring.md); this one is the working
+# default. The first homepage makes it the business's own: its tokens and
+# identity, and its layout wherever their material calls for another
+# (the design skill).
+id: lander
+title: Lander
+summary: >
+  A bold, confident page: a tall headline, one teal for every action, photographs
+  everywhere, and proof above the fold.
+
+# What makes this site this site, filled when the site grows past its
+# homepage; "to fill" marks a site that is still a template.
+identity:
+  subject: "to fill: what this site sells, explains, or does"
+  audience: "to fill: who arrives, and what they already know"
+  one_job: "to fill: what the page must make clear or help someone do"
+  direction: "to fill: the chosen direction's name and one-sentence thesis"
+  source: "to fill: the real-world artifact or behaviour it borrows from"
+  signature: "to fill: the one moment a visitor should remember"
+  rejection: "to fill: the familiar pattern this site deliberately avoids"
+  photography: "to fill: real photos the owner has, or a NEED line until they do"
+
+tokens:
+  # Every colour by role. Markup uses only these (bg-*, text-*, border-*);
+  # Tailwind's own palette is switched off. A value is a hex, a reference to
+  # another role ({colors.ink}), or a CSS colour that uses references.
+  colors:
+    canvas: "#fafaf9"
+    surface: "#ffffff"
+    panel: "#f0f4f3"
+    night: "#18181b"
+    ink: "#111113"
+    ink-2: "#3f3f46"
+    ink-3: "#52525b"
+    night-ink: "#fafafa"
+    night-ink-2: "#d4d4d8"
+    accent: "#115e59"
+    accent-ink: "#ffffff"
+    gold: "#fb923c"
+    coupon: "#be123c"
+    accent-hover: "color-mix(in oklab, {colors.accent} 85%, black)"
+    line: "rgb(25 22 18 / 0.14)"
+    line-strong: "rgb(25 22 18 / 0.55)"
+    line-on-night: "rgb(246 243 236 / 0.16)"
+  # The family of `display` becomes font-display, the family of `copy`
+  # font-body; any other family is font-<style>. A family is a name, or a
+  # whole stack when it holds a comma.
+  typography:
+    display:
+      fontFamily: "Oswald"
+      fontSize: clamp(2.75rem, 4.6vw, 4rem)
+      fontWeight: 600
+      lineHeight: 0.98
+      letterSpacing: -0.005em
+    section:
+      fontFamily: "Oswald"
+      fontSize: clamp(2.25rem, 4vw, 3.25rem)
+      fontWeight: 600
+      lineHeight: 1
+      letterSpacing: -0.025em
+    title:
+      fontFamily: "Oswald"
+      fontSize: clamp(1.5rem, 2.4vw, 2rem)
+      fontWeight: 600
+      lineHeight: 1.1
+      letterSpacing: -0.015em
+    lede:
+      fontFamily: "Inter"
+      fontSize: clamp(1.125rem, 1.4vw, 1.375rem)
+      fontWeight: 400
+      lineHeight: 1.5
+    copy:
+      fontFamily: "Inter"
+      fontSize: 1.125rem
+      fontWeight: 400
+      lineHeight: 1.6
+    label:
+      fontFamily: "Inter"
+      fontSize: 1rem
+      fontWeight: 600
+      lineHeight: 1.4
+      letterSpacing: 0.04em
+  rounded:
+    control: 4px
+    card: 6px
+  shadows:
+    lift: "0 1px 2px rgb(25 22 18 / 0.06), 0 12px 32px -12px rgb(25 22 18 / 0.18)"
+    card: "0 1px 2px rgb(25 22 18 / 0.06)"
+  spacing:
+    section: clamp(5rem, 10vw, 8.5rem)
+    lead: clamp(2.5rem, 4vw, 3.5rem)
+  containers:
+    content: 72rem
+    wide: 80rem
+  easing:
+    soft: cubic-bezier(0.2, 0, 0, 1)
+
+sections:
+  overview: >
+    A warm, quiet page where one thing is loud at a time. It opens on the
+    business's best photograph edge to edge behind the headline. The ground
+    is a warm off-white, the text a near-black with brown in it, and one
+    saturated accent does every action. Headings are large and few, so
+    hierarchy comes from size and space; colour and energy come from the
+    business's own photographs and material. `npm run check:design` flags the
+    generated-page patterns and the contrast.
+  colors: >
+    {colors.canvas} is the page ground, {colors.surface} a card or framed
+    visual on it, {colors.panel} a tinted band, {colors.night} the dark
+    ground (the first screen without a photograph, a statement band, the
+    footer). {colors.ink} is text on light grounds, {colors.ink-2} secondary
+    text, {colors.ink-3} captions; on night, {colors.night-ink} and
+    {colors.night-ink-2}. {colors.accent} is the one action colour (buttons,
+    links in copy, the focus ring), with {colors.accent-ink} on it and
+    {colors.accent-hover} its hover. {colors.line} is a hairline,
+    {colors.line-strong} an input edge, {colors.line-on-night} a hairline on
+    night.
+  typography: >
+    A display face for headings, a text face for reading.
+    {typography.display} is the page's h1, on two or three lines;
+    {typography.section} every h2; {typography.title} the h3 of a row or a
+    card; {typography.lede} the line under a heading, in {colors.ink-2};
+    {typography.copy} body text, under 70 characters a line;
+    {typography.label} metadata such as a date or a caption. Each size
+    carries its own line height and tracking.
+  components: >
+    The first screen is Hero: the photograph, or a short muted video,
+    full-bleed behind the headline, one line, one action and the RatingLine;
+    with no photograph good enough, the words on {colors.night}. One primary
+    Button per section, labelled with what happens next. Cards hold
+    discrete, comparable things (a service, a person, a review); a list
+    reads better as rows. Images sit at {rounded.card}.
+    The rest are in src/components (npm run list-parts).
+  layout: >
+    Every band shares one frame, max-w-wide with px-5 sm:px-8 (Section does
+    this), so the header, sections and footer start on one left edge;
+    reading text narrows to max-w-content. Sections take py-section, and a
+    heading sits mt-lead above what it introduces. Photographs run edge to
+    edge where they are the point: the first screen's always, when the
+    business has one, chosen by looking at them (brand/images.md). Add a
+    section whenever the material has something a visitor would look for:
+    a gallery, the team, the process, the area served. Compose each from its
+    content, so a sequence, a comparison and a story look different and no
+    two neighbours share a shape. One section is the peak; the rest are
+    quieter.
+  elevation_and_depth: >
+    Mostly flat. A card or framed visual that should feel like an object
+    gets a {colors.line} edge and {shadows.lift}; a menu or dialog sits on
+    {colors.surface} with {shadows.lift}; the team's admin cards get
+    {shadows.card}.
+  motion: >
+    The first screen's words rise in once (data-rise), and one or two later
+    bands as they come into view (data-reveal); a long row of reviews or
+    logos may run as a marquee (data-marquee). Hover and focus take 150ms
+    with {easing.soft}. Reduced motion shows the finished page
+    (styles/input.css).
+  responsive_behavior: >
+    Phone and desktop are two compositions of the same content. Type is
+    fluid, so headings need no phone sizes. Below 1024px a split stacks,
+    text first unless the visual is the point; cards go to one column below
+    640px. The header stays one row; past four links the rest go into a
+    menu.
+  dos_and_donts:
+    do:
+      - rule: "Spend boldness in one place per page."
+        why: "When every section is loud, none is; the peak is what a visitor remembers."
+      - rule: "Use the tokens; add one to this record when one is missing."
+        why: "A one-off value in markup is a second design system that nobody maintains."
+    dont:
+      - rule: "Don't default to a centred hero over a glow, three feature cards, pricing, an FAQ and a final call to action whatever the content."
+        why: "It is the generated-page template; a visitor has seen it a hundred times and it says nothing about this business."
+      - rule: "Don't use gradients, blur, glass or glow to make up for a weak idea."
+        why: "Effects date fast and hide that the section has nothing to show."
+      - rule: "Don't put a form beside the first headline, or a small label above the headline or above every heading."
+        why: "Both are the generated-page look; the first screen's job is the photograph and the promise."
+      - rule: "Don't reach for cream with a soft serif, or Inter with Playfair, by default."
+        why: "They are what generated sites pick; the type and colour come from the business or a library record."
+      - rule: "Don't leave a section that would fit another business with the logo swapped."
+        why: "It tells the visitor nothing about this one; their own facts, photographs and proof do."
+  known_gaps: >
+    No layout rules per kind of content: those come with the site's own
+    system when it grows past the homepage.
+
+x_declares: []
+x_declares_reasons: {}

@@ -9,7 +9,7 @@ It starts as a made-up business, Example Auto Detailing, with placeholder legal 
 
 This one app makes the ads, sends people to the landers, saves the leads, sends them on and reports. Which skill, by the ask:
 
-- "give me ideas", a campaign: `ideas`; competitors, customers' words: `research`
+- "give me ideas", a campaign: `ad-ideas`; competitors, customers' words: `research`
 - "write me ads", "a set to test": `ad`; its hook and lengths: `copywriting`; every word: `writing`, then `tropes`
 - "how did the ads do": `results`, and the Reports page for leads and cost per lead
 

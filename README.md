@@ -1,5 +1,7 @@
 # Lander
 
+[![Deploy on Task & Tool](https://taskandtool.com/images/deploy-button.svg)](https://taskandtool.com/accounts/register?starter_app=lander)
+
 A landing page for paid ads on Hono and Tailwind, deployed to Cloudflare. Three styles: a stepped form that asks its first
 question in the hero, a button down to the whole form, and a page per campaign with its own headline. Leads save to Postgres with
 their UTM tags, go on to a CRM or webhook, and show in a report with cost per lead.

@@ -6,6 +6,8 @@ see what the leads cost in a report.
 
 [![Deploy on Task & Tool](https://taskandtool.com/images/deploy-button.svg)](https://taskandtool.com/accounts/register?starter_app=lander)
 
+![Marlow Coaching's free strategy call landing page, with the Facebook ad that opens it](https://taskandtool.com/images/starter-apps/lander.webp)
+
 It's made to run on Task & Tool. There, each app has its own computer for
 your AI agent. The project has a Postgres database for leads. The agent uses
 the skills and scripts in this repo to write your offer, the pages and the
@@ -17,6 +19,8 @@ pages are built with Hono and Tailwind.
 Click the button above, or pick Lander when you create an app on [Task &
 Tool](https://taskandtool.com/starter-apps/lander). Then tell the agent
 about your business and the offer you want to run ads for.
+
+See it in use on the [Lander page](https://taskandtool.com/starter-apps/lander).
 
 ## Features
 
@@ -36,6 +40,8 @@ stepped pages, the first question is what the visitor wants. Each answer is
 a card with a picture. Name, email and phone come last. The form works with
 JavaScript off.
 
+![Northline Gardens' fall cleanup lander: Get your garden cleared for winter from $90. The first question, What would you like done?, is in the top section](https://taskandtool.com/images/marketing/northline-gardens-lander-fall-cleanup.webp)
+
 ### The agent writes your ads
 
 Ask for ideas and the agent works out angles from your brand notes and
@@ -50,6 +56,11 @@ Before you see a set, the agent checks each ad's text limits, its claims and
 its landing page. Then it sends you each ad as it will look in the feed. It
 works from sheets in `specs/` with the sizes and text limits for Meta,
 Google, TikTok, LinkedIn, Pinterest and YouTube.
+
+<p>
+  <img src="https://taskandtool.com/images/marketing/marlow-ad-strategy-call.webp" width="300" alt="Marlow Coaching's Facebook ad for a free 30-minute strategy call">
+  <img src="https://taskandtool.com/images/marketing/marlow-lander-phone.webp" width="300" alt="The strategy call lander it links to, at phone width">
+</p>
 
 ### Every lead is saved with the ad it came from
 

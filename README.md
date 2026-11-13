@@ -6,7 +6,7 @@ see what the leads cost in a report.
 
 [![Deploy on Task & Tool](https://taskandtool.com/images/deploy-button.svg)](https://taskandtool.com/accounts/register?starter_app=lander)
 
-![Marlow Coaching's free strategy call landing page, with the Facebook ad that opens it](https://taskandtool.com/images/starter-apps/lander.webp)
+![Marlow Coaching's Facebook ad and the strategy call landing page it links to](https://taskandtool.com/images/starter-apps/lander.webp)
 
 It's made to run on Task & Tool. There, each app has its own computer for
 your AI agent. The project has a Postgres database for leads. The agent uses
@@ -20,7 +20,8 @@ Click the button above, or pick Lander when you create an app on [Task &
 Tool](https://taskandtool.com/starter-apps/lander). Then tell the agent
 about your business and the offer you want to run ads for.
 
-See it in use on the [Lander page](https://taskandtool.com/starter-apps/lander).
+See it in use on the [Lander
+page](https://taskandtool.com/starter-apps/lander).
 
 ## Features
 
@@ -91,7 +92,7 @@ type in the amount. You then see the sale on the row for that lead's ad. If
 you track leads in another CRM, the agent can set up a job to copy their
 status from it each morning.
 
-### Your team works the leads on a private admin page
+### A private admin page for leads
 
 At `/admin` your team sees every lead and booking. From a lead you can
 reschedule or cancel a booking and refund a payment. Appointments has the
@@ -116,7 +117,7 @@ it finds. The check covers five areas:
 | Design | Low contrast, small text and pages that scroll sideways on a phone |
 | SEO | Missing titles, descriptions and alt text, and broken links |
 
-### The agent follows a skill for each kind of work
+### Skills in this repo
 
 A skill is a set of instructions the agent loads when a task needs it. This
 repo has 16:
@@ -140,12 +141,12 @@ agent publishes the landers to Cloudflare when you ask. Each app gets:
 
 - Its own computer for the agent
 - A dev address your team opens to see changes before they go live
-- A Postgres database for leads, bookings and payments that you can roll
-  back to an earlier point in time
+- A Postgres database for leads, bookings and payments. You can roll it back
+  to an earlier point in time.
 - Publishing on your own domain with a free SSL certificate. Only your team
   sees production until you make it public.
 - Connections to your ad account, Stripe, email and any service with an API.
-  Their keys stay out of this repo.
+  Task & Tool holds their keys.
 - Scheduled jobs for the morning ad costs and CRM statuses above
 - Sign-in for your team on the admin pages
 

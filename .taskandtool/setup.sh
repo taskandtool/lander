@@ -62,4 +62,4 @@ if [ -f "$HOME/tools/taskandtool.py" ] && [ -f package.json ]; then
   python3 "$HOME/tools/taskandtool.py" serve "npm run dev" --port 3000
 fi
 
-echo "== lander starter app setup done. Next: dev answers at localhost:3000; for a first homepage, npm run brand-from-site -- <their site> once after-setup.sh has installed tt-crawl"
+echo "== lander starter app setup done. Next: dev answers at localhost:3000; to make it their own, read their site with tt-crawl brand <their site> --places (the brand skill) once after-setup.sh has installed tt-crawl, then rewrite src/offer.ts (the lander skill)"

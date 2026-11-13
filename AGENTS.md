@@ -3,7 +3,7 @@
 A landing page for paid ads, on Hono: one page, one offer, one action. Every lead is saved first, with the ad it came
 from, then sent on to the client's CRM if they have one. The team reads leads and a report at `/admin`.
 
-It starts as a made-up business, Example Auto Detailing, with placeholder legal pages, address and reviews and stock photos from Pexels. To make it a real business's own, replace `src/offer.ts`, `src/legal.ts`, `static/images/lander/` and the colours and fonts in `design/system.yaml`, and the form's questions at the end of `src/offer.ts`. Never add a review or a figure the business did not give.
+It starts as a made-up business, Example Auto Detailing, with placeholder legal pages, address and reviews and stock photos from Pexels. To make it a real business's own, first read their site with the `brand` skill (`tt-crawl brand <url> --places` fills `brand/` and `public/`), then replace `src/offer.ts`, `src/legal.ts`, `static/images/lander/` and the colours and fonts in `design/system.yaml`, and the form's questions at the end of `src/offer.ts`. Never add a review or a figure the business did not give.
 
 ## Facebook ads
 

@@ -134,7 +134,7 @@ sections:
     Button per section, labelled with what happens next. Cards hold
     discrete, comparable things (a service, a person, a review); a list
     reads better as rows. Images sit at {rounded.card}.
-    The rest are in src/components (npm run list-parts).
+    The rest are in src/components.
   layout: >
     Every band shares one frame, max-w-wide with px-5 sm:px-8 (Section does
     this), so the header, sections and footer start on one left edge;

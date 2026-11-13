@@ -13,7 +13,7 @@ This one app makes the ads, sends people to the landers, saves the leads, sends 
 - "write me ads", "a set to test": `ad`; its hook and lengths: `copywriting`; every word: `writing`, then `tropes`
 - "how did the ads do": `results`, and the Reports page for leads and cost per lead
 
-In Ads Manager, name the ad as its folder and set its URL parameters to `utm_source=facebook&utm_medium=paid&utm_campaign={{campaign.name}}&utm_term={{adset.name}}&utm_content={{ad.name}}`. Meta fills in the names, so each lead shows its campaign, ad set and ad, and spend matches leads by name.
+In Ads Manager, name the ad as its folder and set its URL parameters to `utm_source=facebook&utm_medium=paid&utm_campaign={{campaign.name}}&utm_term={{adset.name}}&utm_content={{ad.name}}`. Meta fills in the names. Each lead then shows its campaign, ad set and ad. The report matches spend to leads by those names.
 
 Each ad is a folder, `creatives/YYYY-MM-DD-<slug>/`: `creative.md`, its pictures (`v1.jpg`), and `landing:`, the lander page it goes to. A new angle with no page of its own gets a campaign in `src/offer.ts` first, its headline echoing the hook. Every fact an ad states is numbered in `claims.md`.
 

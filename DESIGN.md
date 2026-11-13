@@ -62,7 +62,7 @@ A display face for headings, a text face for reading. `text-display` is the page
 
 ## Component Stylings
 
-The first screen is Hero: the photograph, or a short muted video, full-bleed behind the headline, one line, one action and the RatingLine; with no photograph good enough, the words on `night`. One primary Button per section, labelled with what happens next. Cards hold discrete, comparable things (a service, a person, a review); a list reads better as rows. Images sit at `rounded-card`. The rest are in src/components (npm run list-parts).
+The first screen is Hero: the photograph, or a short muted video, full-bleed behind the headline, one line, one action and the RatingLine; with no photograph good enough, the words on `night`. One primary Button per section, labelled with what happens next. Cards hold discrete, comparable things (a service, a person, a review); a list reads better as rows. Images sit at `rounded-card`. The rest are in src/components.
 
 ## Layout Principles
 

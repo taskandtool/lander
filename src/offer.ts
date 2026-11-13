@@ -46,7 +46,7 @@ export const offer = {
   /** The page after the form: the moment they're likeliest to call. */
   thanks: {
     title: "Want it done sooner? Call now",
-    call: "We'll answer any and all of your questions",
+    call: "Ask us anything",
     next: "What happens next",
   },
   next: [
@@ -67,7 +67,7 @@ export const offer = {
     title: "Your car deserves better than a drive-through wash",
     image: { src: `${IMG}/problem.jpg`, alt: "A car covered in dirt" },
     items: ["Swirl marks in the paint", "Crumbs in every seat", "That smell you can't place", "Brake dust on the wheels"],
-    close: "A proper detail fixes what a car wash can't",
+    close: "We fix what a car wash can't",
   },
   /** Who does the work and what backs it. */
   backing: {
@@ -107,9 +107,9 @@ export const offer = {
   faq: [
     { q: "How long does a detail take?", a: "Placeholder.", call: "Want to know for your car? Call us at" },
     { q: "Do I need to be there?", a: "Placeholder." },
-    { q: "Do you come to my area?", a: "We'd love to! Fill out the form with your ZIP code and we'll let you know.", call: "Or call us at" },
+    { q: "Do you come to my area?", a: "Fill out the form with your ZIP code and we'll let you know.", call: "Or call us at" },
   ],
-  faqClose: "Got another question? We'd love to answer it",
+  faqClose: "Got another question? Call us",
 };
 
 export type Campaign = { path: string; headline: { before: string; accent: string; after?: string }; lede: string; hero: { image: string; alt: string } };
@@ -134,7 +134,7 @@ export const CAMPAIGNS: Campaign[] = [
   },
   {
     path: "/interior",
-    headline: { before: "A spotless interior,", accent: "without leaving home" },
+    headline: { before: "Get a spotless interior", accent: "without leaving home" },
     lede: "We come to you and clean every seat, carpet and window.",
     hero: { image: `${IMG}/hero-full.jpg`, alt: "A car's interior being cleaned" },
   },

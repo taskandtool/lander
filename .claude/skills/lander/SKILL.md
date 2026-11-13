@@ -27,8 +27,8 @@ On a phone and a laptop, without scrolling: the rating, the headline, what they 
 
 ## Below the first screen
 
-In this order unless the offer says otherwise: reviews, photos of the work, prices, the guarantee, FAQ, and a footer with the areas served and the privacy and terms pages. Each
-ends where the next can act: the buttons go to `#quote`. A section with nothing real to say comes out.
+In this order unless the offer says otherwise: reviews, photos of the work, prices, the guarantee, FAQ, and a footer with the areas served and the privacy and terms pages. End
+each section with a button to `#quote`. A section with nothing real to say comes out.
 
 ## Proof
 

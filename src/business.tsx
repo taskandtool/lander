@@ -263,7 +263,7 @@ admin.use("*", async (c, next) =>
     : c.html(
         AdminFrame({
           title: "Leads", current: LEADS, user: c.get("user"),
-          children: <p class="max-w-prose">This lander has no database yet, so its forms are switched off.</p>,
+          children: <p class="max-w-prose">This lander has no database yet. Its forms are off until it has one.</p>,
         }),
         503,
       ),
@@ -301,7 +301,7 @@ admin.get("/settings", async (c) => {
               return <li class="flex flex-wrap justify-between gap-x-4"><span class="font-semibold">{d.title}</span> <span class="text-ink-2">{n?.sent ?? 0} sent, {n?.failed ?? 0} failed in the last 30 days</span></li>;
             })}
           </ul>
-        ) : <p class="text-ink-2">Saved here only. Leads aren't sent anywhere else.</p>}
+        ) : <p class="text-ink-2">Leads are saved here only.</p>}
       </Section>
       <Section title="Email about new leads">
         <p class="text-ink-2">{!email.on ? "Off. Nobody is emailed about new leads." : email.to.length ? `On, to ${email.to.join(", ")}.` : "On, but nobody is on the list."}</p>

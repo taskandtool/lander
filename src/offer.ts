@@ -64,10 +64,10 @@ export const offer = {
   ],
   /** Who this is for and what's wrong now: first after the numbers. */
   problem: {
-    title: "Your car deserves better than a drive-through wash",
+    title: "Still seeing these after the car wash?",
     image: { src: `${IMG}/problem.jpg`, alt: "A car covered in dirt" },
     items: ["Swirl marks in the paint", "Crumbs in every seat", "That smell you can't place", "Brake dust on the wheels"],
-    close: "We fix what a car wash can't",
+    close: "We fix all of it",
   },
   /** Who does the work and what backs it. */
   backing: {
